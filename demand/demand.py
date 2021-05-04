@@ -1,4 +1,3 @@
-import demand as demand
 import pandas as pd
 import os
 from dfply import *
@@ -8,7 +7,7 @@ from sklearn.metrics import mean_squared_error
 import matplotlib.pyplot as plt
 
 #This function sets the working directory
-def set_wd(wd="D:/cygwin64/home/roma5/project_folder/IN104-RICHOU_Romaric-Thomas_ZEREZ-TV/demand"):
+def set_wd(wd="/home/thomas/Documents/IN104/Projet_IN104/IN104-RICHOU_Romaric-Thomas_ZEREZ-TV/demand/"):
     os.chdir(wd)
 
 #This function imports a csv file and has the option to plot its value columns as a function of the first column
@@ -26,7 +25,7 @@ def h(t, a, b, c, d):
 
 #The following function takes sigmoid parameters values and a temperature vector as input and plots the sigmoid, can compare it with the actual values
 def consumption_sigmoid(t, real_conso, a = 900, b = -35, c = 6, d = 300, plot = True):
-  
+
     h_hat = h(t, a, b, c, d)
 
     if plot:
@@ -102,9 +101,9 @@ class optimize_sigmoid:
             t= self.__f['Actual'].values
             c= self.__f['LDZ'].values
             self.__coef, self.__cov = curve_fit(h,t,c,[guess_a, guess_b, guess_c, guess_d])
-            
+
             s = consumption_sigmoid(t,c,self.__coef[0],self.__coef[1],self.__coef[2],self.__coef[3],plot = True)
-            
+
             self.__corr, self.__rmse, self.__nrmse, self.__anrmse = get_fit_metrics(s, self.__f['LDZ'])
         else:
             print("Class not initialized")
@@ -131,7 +130,7 @@ class optimize_sigmoid:
             t = "optimize method is not yet run"
         return t
 
-#If you have filled correctly the following code will run without an issue        
+#If you have filled correctly the following code will run without an issue
 if __name__ == '__main__':
 
     #set working directory
@@ -146,7 +145,7 @@ if __name__ == '__main__':
     #There is a lot of volatility even if we can see annual periodic evolution
 
     #2) work on consumption data (non-linear regression)
-    #2)1. Plot consumption as a function of temperature    
+    #2)1. Plot consumption as a function of temperature
 
     scatter_plot()
     # The function looks like our model
@@ -163,7 +162,7 @@ if __name__ == '__main__':
     # These are the 3 ways to access a protected attribute, it works the same for a protected method
     # An attribute/method is protected when it starts with 2 underscores "__"
     # Protection is good to not falsy create change
-    
+
     print(
             [
             sig.__dict__['_optimize_sigmoid__corr'],
@@ -190,11 +189,11 @@ if __name__ == '__main__':
             getattr(sig, "_optimize_sigmoid__anrmse")
             ]
         )
-    
+
     print(sig.fit_metrics())
     c.sigmoid()
     print(c)
-    
+
     #3) If time allows do TSA on actual temperature
     #3)1. Check trend (and Remove it)
     #3)2. Check Seasonality (Normal Temperature)
