@@ -31,11 +31,13 @@ def import_csv(f_name = "price_data.csv"):
     return f >> mutate(Date = pd.to_datetime(f['Date']))
 
 # classification
-def classification(NWB, LNW):
-    x = NWB
-    y = LNW
+def classification(x, y):
+    x_train, x_test, y_train, y_test = train_test_split(x, y, random_state=1)
     lr = LogisticRegression()
     lr.fit(x,y)
+    y_pred = lr.predict(x_test)
+    confusion_matrix(y_test, y_pred)
+
 
 if __name__ == '__main__':
 
@@ -62,4 +64,6 @@ if __name__ == '__main__':
         FSW1.append(max(supply_data.full[i] - 45, 0))
         FSW2.append(max(45 - supply_data.full[i], 0))
 
-    classification(NW, LNW)
+    x = [LNW, FSW1, FSW2, price_data.SAS_GPL, price_data.SAS_NBP, price_data.SAS_NCG, price_data.SAS_TTF]
+    y = NWB
+    d = classification(x, y)
