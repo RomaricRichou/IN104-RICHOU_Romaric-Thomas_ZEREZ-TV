@@ -9,14 +9,17 @@ from sklearn.datasets import make_classification
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import confusion_matrix
+from sklearn.tree import DecisionTreeClassifier
 import matplotlib.pyplot as plt
 import seaborn as sns
-sns.set()
+import numpy as np
 
 # Création des dictionnaires vides
 supply_data = {}
 NW, LNW, FSW1, FSW2, NWB = {},{},{},{}, {}
 d = {}
+d2 = {}
+storage_data_2 = {}
 
 #This function sets the working directory
 def set_wd(wd="/home/thomas/Documents/IN104/Projet_IN104/IN104-RICHOU_Romaric-Thomas_ZEREZ-TV/supply/"):
@@ -35,14 +38,24 @@ def import_csv(f_name = "price_data.csv"):
     f = pd.read_csv(f_name, ';')
     return f >> mutate(Date = pd.to_datetime(f['Date']))
 
-# classification
+# regressions
 def reglineaire(x, y):
     x_train, x_test, y_train, y_test = train_test_split(x, y, random_state=1)
     lr = LogisticRegression()
-    lr.fit(x,y)
+    lr.fit(x_train,y_train)
     y_pred = lr.predict(x_test)
     cm = confusion_matrix(y_test, y_pred)
+    probs = np.transpose(lr.predict_proba(x_test))[0]
     return {'recall': metrics.recall_score(y_test, y_pred), 'neg_recall': cm[1,1]/(cm[0,1] + cm[1,1]), 'confusion': cm, 'precision': metrics.precision_score(y_test, y_pred), 'neg_precision':cm[1,1]/cm.sum(axis=1)[1], 'roc': metrics.roc_auc_score(y_test, probs), 'class_mod': "the logistic regression"}
+
+def randforest(x, y):
+    x_train, x_test, y_train, y_test = train_test_split(x, y, random_state=1)
+    tree = DecisionTreeClassifier()
+    tree.fit(x_train,y_train)
+    y_pred = tree.predict(x_test)
+    cm = confusion_matrix(y_test, y_pred)
+    probs = np.transpose(tree.predict_proba(x_test))[0]
+    return {'recall': metrics.recall_score(y_test, y_pred), 'neg_recall': cm[1,1]/(cm[0,1] + cm[1,1]), 'confusion': cm, 'precision': metrics.precision_score(y_test, y_pred), 'neg_precision':cm[1,1]/cm.sum(axis=1)[1], 'roc': metrics.roc_auc_score(y_test, probs), 'class_mod': "random forest regression"}
 
 if __name__ == '__main__':
 
@@ -69,9 +82,10 @@ if __name__ == '__main__':
 
             FSW1[i].append(max(supply_data[i].full[j] - 45, 0))
             FSW2[i].append(max(45 - supply_data[i].full[j], 0))
-        x = [LNW[i], FSW1[i], FSW2[i], price_data.SAS_GPL, price_data.SAS_NBP, price_data.SAS_NCG, price_data.SAS_TTF]
-        y = NWB[i]
+        x = np.transpose([LNW[i][0:1602], FSW1[i][0:1602], FSW2[i][0:1602], price_data.SAS_GPL.values[0:1602], price_data.SAS_NBP.values[0:1602], price_data.SAS_NCG.values[0:1602], price_data.SAS_TTF.values[0:1602]])
+        y = NWB[i][0:1602]
         d[i] = reglineaire(x, y)
+        d2[i] = randforest(x, y)
 
 
 
