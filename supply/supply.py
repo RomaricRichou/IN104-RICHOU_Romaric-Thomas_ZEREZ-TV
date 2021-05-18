@@ -85,6 +85,29 @@ if __name__ == '__main__':
     #import price data
     price_data = import_csv()
 
+    # Classification
+    for i in storage_data:
+        supply_data[i] = pd.merge(storage_data[i], price_data, how = 'inner', on= 'Date')
+        NW[i] = supply_data[i].withdrawal - supply_data[i].injection
+        NWB[i], LNW[i], FSW1[i], FSW2[i] = [], [], [], []
+        c = 0
+        for j in range(len(NW[i])):
+            if math.isfinite(supply_data[i].full[j]):
+                c += 1
+                if j >= 1:
+                    LNW[i].append(NW[i][j-1])
+                if NW[i][j] >= 0:
+                    NWB[i].append(1)
+                else:
+                    NWB[i].append(0)
+                FSW1[i].append(max(supply_data[i].full[j] - 45, 0))
+                FSW2[i].append(max(45 - supply_data[i].full[j], 0))
+        x = np.transpose([LNW[i][0:c-1], FSW1[i][0:c-1], FSW2[i][0:c-1], price_data.SAS_GPL.values[0:c-1], price_data.SAS_NBP.values[0:c-1], price_data.SAS_NCG.values[0:c-1], price_data.SAS_TTF.values[0:c-1]])
+        y = NWB[i][0:c-1]
+        d[i] = reglog(x, y)
+        d2[i] = randforest(x, y)
+
+    # Regression
     for i in storage_data:
         supply_data[i] = pd.merge(storage_data[i], price_data, how = 'inner', on= 'Date')
         NW[i] = supply_data[i].withdrawal - supply_data[i].injection
@@ -96,20 +119,11 @@ if __name__ == '__main__':
                     c += 1
                     if j >= 1:
                         LNW[i].append(NW[i][j-1])
-                    # if NW[i][j] >= 0:
-                    #     NWB[i].append(1)
-                    # else:
-                    #     NWB[i].append(0)
                     FSW1[i].append(max(supply_data[i].full[j] - 45, 0))
                     FSW2[i].append(max(45 - supply_data[i].full[j], 0))
 
         x = np.transpose([LNW[i][0:c-1], FSW1[i][0:c-1], FSW2[i][0:c-1], price_data.SAS_GPL.values[0:c-1], price_data.SAS_NBP.values[0:c-1], price_data.SAS_NCG.values[0:c-1], price_data.SAS_TTF.values[0:c-1]])
-
-        # y = NWB[i][0:1602]
         y = NW[i][0:c-1]
-
-        # d[i] = reglog(x, y)
-        # d2[i] = randforest(x, y)
         d3[i] = reglin(x, y)
 
     filename = 'finalized_model.sav'

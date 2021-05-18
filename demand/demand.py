@@ -5,6 +5,7 @@ from scipy.optimize import curve_fit
 from scipy.stats import pearsonr
 from sklearn.metrics import mean_squared_error
 import matplotlib.pyplot as plt
+import pickle
 
 #This function sets the working directory
 def set_wd(wd="/home/thomas/Documents/IN104/Projet_IN104/IN104-RICHOU_Romaric-Thomas_ZEREZ-TV/demand/"):
@@ -193,6 +194,15 @@ if __name__ == '__main__':
     print(sig.fit_metrics())
     c.sigmoid()
     print(c)
+
+
+    consumption_data = conso[['Date', 'Actual']].copy()
+    consumption_data.Actual = consumption_data.Actual.transform(c.get_consumption)
+    consumption_data = consumption_data.rename(columns = {'Actual': 'Consomation'})
+
+    filename = 'consumption_model.sav'
+    pickle.dump(consumption_data, open(filename, 'wb'))
+
 
     #3) If time allows do TSA on actual temperature
     #3)1. Check trend (and Remove it)
