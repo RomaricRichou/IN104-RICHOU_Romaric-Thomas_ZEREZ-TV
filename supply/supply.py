@@ -24,6 +24,10 @@ NW, LNW, FSW1, FSW2, NWB = {},{},{},{}, {}
 d = {}
 d2 = {}
 d3 = {}
+X_binary_matrix = {}
+X_reg_matrix = {}
+X_binary_matrix_avec_les_dates = {}
+X_reg_matrix_avec_les_dates = {}
 
 ##This function sets the working directory
 def set_wd(wd="/home/thomas/Documents/IN104/Projet_IN104/IN104-RICHOU_Romaric-Thomas_ZEREZ-TV/supply/"):
@@ -51,7 +55,7 @@ def reglog(x, y):
     y_pred = lr.predict(x_test)
     cm = confusion_matrix(y_test, y_pred)
     probs = np.transpose(lr.predict_proba(x_test))[0]
-    return {'recall': metrics.recall_score(y_test, y_pred), 'neg_recall': cm[1,1]/(cm[0,1] + cm[1,1]), 'confusion': cm, 'precision': metrics.precision_score(y_test, y_pred), 'neg_precision':cm[1,1]/cm.sum(axis=1)[1], 'roc': metrics.roc_auc_score(y_test, probs), 'class_mod': "the logistic regression"}
+    return {'recall': metrics.recall_score(y_test, y_pred), 'neg_recall': cm[1,1]/(cm[0,1] + cm[1,1]), 'confusion': cm, 'precision': metrics.precision_score(y_test, y_pred), 'neg_precision':cm[1,1]/cm.sum(axis=1)[1], 'roc': metrics.roc_auc_score(y_test, probs), 'class_mod': lr}
 
 def randforest(x, y):
     x_train, x_test, y_train, y_test = train_test_split(x, y, random_state=1)
@@ -60,7 +64,7 @@ def randforest(x, y):
     y_pred = tree.predict(x_test)
     cm = confusion_matrix(y_test, y_pred)
     probs = np.transpose(tree.predict_proba(x_test))[0]
-    return {'recall': metrics.recall_score(y_test, y_pred), 'neg_recall': cm[1,1]/(cm[0,1] + cm[1,1]), 'confusion': cm, 'precision': metrics.precision_score(y_test, y_pred), 'neg_precision':cm[1,1]/cm.sum(axis=1)[1], 'roc': metrics.roc_auc_score(y_test, probs), 'class_mod': "random forest regression"}
+    return {'recall': metrics.recall_score(y_test, y_pred), 'neg_recall': cm[1,1]/(cm[0,1] + cm[1,1]), 'confusion': cm, 'precision': metrics.precision_score(y_test, y_pred), 'neg_precision':cm[1,1]/cm.sum(axis=1)[1], 'roc': metrics.roc_auc_score(y_test, probs), 'class_mod': tree}
 
 def reglin(x, y):
     x_train, x_test, y_train, y_test = train_test_split(x, y, random_state=1)
@@ -71,7 +75,7 @@ def reglin(x, y):
     rmse = np.sqrt(mean_squared_error(y_pred, y_test))
     nrmse = rmse / (np.max(y_test) - np.min(y_test))
     anrmse = rmse / np.mean(y_test)
-    return {'r2': metrics.r2_score(y_test, y_pred), 'rmse': rmse, 'nrmse': nrmse, 'anrmse': anrmse, 'cor': corr, 'l_reg': "the regression"}
+    return {'r2': metrics.r2_score(y_test, y_pred), 'rmse': rmse, 'nrmse': nrmse, 'anrmse': anrmse, 'cor': corr, 'l_reg': lr}
 
 
 if __name__ == '__main__':
@@ -87,6 +91,7 @@ if __name__ == '__main__':
 
     # Classification
     for i in storage_data:
+        Les_Ptns_De_Dates = []
         supply_data[i] = pd.merge(storage_data[i], price_data, how = 'inner', on= 'Date')
         NW[i] = supply_data[i].withdrawal - supply_data[i].injection
         NWB[i], LNW[i], FSW1[i], FSW2[i] = [], [], [], []
@@ -102,13 +107,16 @@ if __name__ == '__main__':
                     NWB[i].append(0)
                 FSW1[i].append(max(supply_data[i].full[j] - 45, 0))
                 FSW2[i].append(max(45 - supply_data[i].full[j], 0))
-        x = np.transpose([LNW[i][0:c-1], FSW1[i][0:c-1], FSW2[i][0:c-1], price_data.SAS_GPL.values[0:c-1], price_data.SAS_NBP.values[0:c-1], price_data.SAS_NCG.values[0:c-1], price_data.SAS_TTF.values[0:c-1]])
+                Les_Ptns_De_Dates.append(supply_data[i]['Date'][j])
+        X_binary_matrix[i] = np.transpose([LNW[i][0:c-1], FSW1[i][0:c-1], FSW2[i][0:c-1], price_data.SAS_GPL.values[0:c-1], price_data.SAS_NBP.values[0:c-1], price_data.SAS_NCG.values[0:c-1], price_data.SAS_TTF.values[0:c-1]])
         y = NWB[i][0:c-1]
-        d[i] = reglog(x, y)
-        d2[i] = randforest(x, y)
+        d[i] = reglog(X_binary_matrix[i], y)
+        d2[i] = randforest(X_binary_matrix[i], y)
+        X_binary_matrix_avec_les_dates[i] = [ X_binary_matrix[i], Les_Ptns_De_Dates[0:c-1] ]
 
     # Regression
     for i in storage_data:
+        Les_Ptns_De_Dates = []
         supply_data[i] = pd.merge(storage_data[i], price_data, how = 'inner', on= 'Date')
         NW[i] = supply_data[i].withdrawal - supply_data[i].injection
         NWB[i], LNW[i], FSW1[i], FSW2[i] = [], [], [], []
@@ -121,16 +129,19 @@ if __name__ == '__main__':
                         LNW[i].append(NW[i][j-1])
                     FSW1[i].append(max(supply_data[i].full[j] - 45, 0))
                     FSW2[i].append(max(45 - supply_data[i].full[j], 0))
-
-        x = np.transpose([LNW[i][0:c-1], FSW1[i][0:c-1], FSW2[i][0:c-1], price_data.SAS_GPL.values[0:c-1], price_data.SAS_NBP.values[0:c-1], price_data.SAS_NCG.values[0:c-1], price_data.SAS_TTF.values[0:c-1]])
+                    Les_Ptns_De_Dates.append(supply_data[i]['Date'][j])
+        X_reg_matrix[i] = np.transpose([LNW[i][0:c-1], FSW1[i][0:c-1], FSW2[i][0:c-1], price_data.SAS_GPL.values[0:c-1], price_data.SAS_NBP.values[0:c-1], price_data.SAS_NCG.values[0:c-1], price_data.SAS_TTF.values[0:c-1]])
         y = NW[i][0:c-1]
-        d3[i] = reglin(x, y)
+        d3[i] = reglin(X_reg_matrix[i], y)
+        X_reg_matrix_avec_les_dates[i] = [ X_reg_matrix[i], Les_Ptns_De_Dates[0:c-1] ]
 
+    model = {'regression': d3, 'classification': d}
     filename = 'finalized_model.sav'
-    pickle.dump(d3, open(filename, 'wb'))
-
-
-
-
+    filename_2 = 'X.sav'
+    filename_3 = 'stockage.sav'
+    pickle.dump(model, open(filename, 'wb'))
+    X = [X_binary_matrix_avec_les_dates, X_reg_matrix_avec_les_dates]
+    pickle.dump(X, open(filename_2, 'wb'))
+    pickle.dump(storage_data, open(filename_3, 'wb'))
 
 
