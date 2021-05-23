@@ -1,5 +1,22 @@
-import pickle
+import pandas as pd
 import os
+from dfply import *
+from scipy.optimize import curve_fit
+from scipy.stats import pearsonr
+from scipy.special import expit
+import sklearn.metrics as metrics
+from sklearn.datasets import make_classification
+from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import confusion_matrix
+from sklearn.tree import DecisionTreeClassifier
+import matplotlib.pyplot as plt
+import seaborn as sns
+import numpy as np
+from sklearn.metrics import mean_squared_error
+import math
+import pickle
 
 ## Importing supply data
 filename = '/home/thomas/Documents/IN104/Projet_IN104/IN104-RICHOU_Romaric-Thomas_ZEREZ-TV/supply/finalized_model.sav'
@@ -12,6 +29,18 @@ stockage = pickle.load(open(filename_3, 'rb'))
 ## Importing consumption data
 filename = '/home/thomas/Documents/IN104/Projet_IN104/IN104-RICHOU_Romaric-Thomas_ZEREZ-TV/demand/consumption_model.sav'
 loaded_consumption = pickle.load(open(filename, 'rb'))
+
+def decisions(supply,demand):
+    res = []
+    for i in range(len(supply)):
+        if supply[i] > demand[i]:
+            res.append("SELL")
+        elif supply[i] < demand[i]:
+            res.append("BUY")
+        else:
+            res.append("FLAT")
+    return res
+
 
 y_pred_binary = {}
 y_pred_num = {}
@@ -42,6 +71,9 @@ if __name__ == '__main__':
     supply = stockage_f.sum(axis = 1, numeric_only = True)
     stockage_final = pd.DataFrame({})
     stockage_final['Date'] = stockage_f['Date']
-    stockage_final['Supply'] = supply
+    stockage_final['Supply'] = -supply
 
-    supply_demand = pd.merge(stockage_final, loaded_consumption, on = 'Date', how = 'inner')
+    sup_dem = pd.merge(stockage_final, loaded_consumption, on = 'Date', how = 'inner')
+    sup_dem = sup_dem >> mutate (Decision = decisions(sup_dem.Supply, sup_dem.Consomation))
+
+
