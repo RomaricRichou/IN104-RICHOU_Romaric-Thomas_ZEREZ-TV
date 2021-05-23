@@ -115,6 +115,7 @@ if __name__ == '__main__':
         X_binary_matrix_avec_les_dates[i] = [ X_binary_matrix[i], Les_Ptns_De_Dates[0:c-1] ]
 
     # Regression
+    vraie_supply = {}
     for i in storage_data:
         Les_Ptns_De_Dates = []
         supply_data[i] = pd.merge(storage_data[i], price_data, how = 'inner', on= 'Date')
@@ -133,15 +134,21 @@ if __name__ == '__main__':
         X_reg_matrix[i] = np.transpose([LNW[i][0:c-1], FSW1[i][0:c-1], FSW2[i][0:c-1], price_data.SAS_GPL.values[0:c-1], price_data.SAS_NBP.values[0:c-1], price_data.SAS_NCG.values[0:c-1], price_data.SAS_TTF.values[0:c-1]])
         y = NW[i][0:c-1]
         d3[i] = reglin(X_reg_matrix[i], y)
-        X_reg_matrix_avec_les_dates[i] = [ X_reg_matrix[i], Les_Ptns_De_Dates[0:c-1] ]
+        X_reg_matrix_avec_les_dates[i] = [ X_reg_matrix[i], Les_Ptns_De_Dates[0:c-1]]
+        vraie_supply[i] = pd.DataFrame({})
+        vraie_supply[i]['Supply'] = NW[i][0:c-1]
+        vraie_supply[i]['Date'] = Les_Ptns_De_Dates[0:c-1]
 
     model = {'regression': d3, 'classification': d}
     filename = 'finalized_model.sav'
     filename_2 = 'X.sav'
     filename_3 = 'stockage.sav'
+    filename_4 = "vraie_stockage.sav"
     pickle.dump(model, open(filename, 'wb'))
     X = [X_binary_matrix_avec_les_dates, X_reg_matrix_avec_les_dates]
     pickle.dump(X, open(filename_2, 'wb'))
     pickle.dump(storage_data, open(filename_3, 'wb'))
+    pickle.dump(vraie_supply, open(filename_4, 'wb'))
+
 
 

@@ -200,8 +200,12 @@ if __name__ == '__main__':
     consumption_data.Actual = consumption_data.Actual.transform(c.get_consumption)
     consumption_data = consumption_data.rename(columns = {'Actual': 'Consomation'})
 
+    vraie_demande = conso[['Date', 'LDZ']].copy()
+
     filename = 'consumption_model.sav'
+    filename_2 = 'v_demande.sav'
     pickle.dump(consumption_data, open(filename, 'wb'))
+    pickle.dump(vraie_demande, open(filename_2, 'wb'))
 
 
     #3) If time allows do TSA on actual temperature

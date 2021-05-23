@@ -22,14 +22,20 @@ import pickle
 filename = '/home/thomas/Documents/IN104/Projet_IN104/IN104-RICHOU_Romaric-Thomas_ZEREZ-TV/supply/finalized_model.sav'
 filename_2 = '/home/thomas/Documents/IN104/Projet_IN104/IN104-RICHOU_Romaric-Thomas_ZEREZ-TV/supply/X.sav'
 filename_3 = '/home/thomas/Documents/IN104/Projet_IN104/IN104-RICHOU_Romaric-Thomas_ZEREZ-TV/supply/stockage.sav'
+filename_4 = '/home/thomas/Documents/IN104/Projet_IN104/IN104-RICHOU_Romaric-Thomas_ZEREZ-TV/supply/vraie_stockage.sav'
 loaded_model = pickle.load(open(filename, 'rb'))
 X = pickle.load(open(filename_2, 'rb'))
 stockage = pickle.load(open(filename_3, 'rb'))
+vraie_stockage = pickle.load(open(filename_4, 'rb'))
 
 ## Importing consumption data
 filename = '/home/thomas/Documents/IN104/Projet_IN104/IN104-RICHOU_Romaric-Thomas_ZEREZ-TV/demand/consumption_model.sav'
-loaded_consumption = pickle.load(open(filename, 'rb'))
+filename_2 = '/home/thomas/Documents/IN104/Projet_IN104/IN104-RICHOU_Romaric-Thomas_ZEREZ-TV/demand/v_demande.sav'
 
+loaded_consumption = pickle.load(open(filename, 'rb'))
+v_demande = pickle.load(open(filename_2, 'rb'))
+
+## Fonction des Décisions
 def decisions(supply,demand):
     res = []
     for i in range(len(supply)):
@@ -41,11 +47,12 @@ def decisions(supply,demand):
             res.append("FLAT")
     return res
 
-
+## Main
 y_pred_binary = {}
 y_pred_num = {}
 
 if __name__ == '__main__':
+    # Prédictions
     for i in loaded_model['classification']:
         y_pred_binary[i] = pd.DataFrame({})
         y_pred_binary[i]['Valueb'] = loaded_model['classification'][i]['class_mod'].predict(X[0][i][0])
@@ -75,5 +82,27 @@ if __name__ == '__main__':
 
     sup_dem = pd.merge(stockage_final, loaded_consumption, on = 'Date', how = 'inner')
     sup_dem = sup_dem >> mutate (Decision = decisions(sup_dem.Supply, sup_dem.Consomation))
+
+    # Réalité
+    for i in vraie_stockage:
+        stockage_i=pd.DataFrame({})
+        stockage_i['Date'] = vraie_stockage[i]['Date']
+        stockage_i[i] = vraie_stockage[i]['Supply']
+        stockage_f = pd.merge(stockage_f, stockage_i, on = 'Date', how = 'outer')
+    supply = stockage_f.sum(axis = 1, numeric_only = True)
+    stockage_final = pd.DataFrame({})
+    stockage_final['Date'] = stockage_f['Date']
+    stockage_final['Supply'] = -supply
+
+    sup_dem_v = pd.merge(stockage_final, pd.DataFrame(v_demande), on = 'Date', how = 'inner')
+    sup_dem_v = sup_dem_v >> mutate (Decision_r = decisions(sup_dem_v.Supply, sup_dem_v.LDZ))
+
+    # Comparaison
+    comparaison = pd.merge(sup_dem, sup_dem_v, on = 'Date', how = 'inner')
+    comparaison = comparaison[["Decision_r", "Decision"]]
+
+
+
+
 
 
